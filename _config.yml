@@ -9,7 +9,7 @@ exclude:
   - "/vendor/"
 
 # Site settings
-title: NOTITLE
+title: NO TITLE
 subtitle: "A blog"
 email: epterm@gmail.com
 name: epter
