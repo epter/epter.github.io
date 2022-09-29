@@ -78,9 +78,9 @@ descriptions:
 social:
   - name: Twitter
     icon: twitter
-    username: TheBenCentra
-    url: https://twitter.com/TheBenCentra
-    desc: Follow me on Twitter
+    username: ""
+    url: ""
+    desc: ""
     share: false
 
   - name: Facebook
@@ -92,16 +92,16 @@ social:
 
   - name: GitHub
     icon: github
-    username: bencentra
-    url: https://github.com/bencentra
-    desc: Fork me on GitHub
+    username: epter
+    url: https://github.com/epter
+    desc: ""
     share: false
 
   - name: LinkedIn
     icon: linkedin
-    username: Ben Centra
-    url: https://www.linkedin.com/pub/ben-centra/47/769/60a
-    desc: Connect with me on LinkedIn
+    username: ""
+    url: ""
+    desc: ""
     share: true
 
   - name: Google+
