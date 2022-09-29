@@ -11,7 +11,7 @@ exclude:
 # Site settings
 title: Centrarium
 subtitle: "A simple yet classy theme for your Jekyll website or blog"
-email: blcentra@gmail.com
+email: epterm@gmail.com
 name: epter
 description: >
   A simple yet classy theme for your Jekyll website or blog.
@@ -81,14 +81,14 @@ social:
     username: TheBenCentra
     url: https://twitter.com/TheBenCentra
     desc: Follow me on Twitter
-    share: true
+    share: false
 
   - name: Facebook
     icon: facebook
     username: thebencentra
     url: ""
     desc: Friend me on Facebook
-    share: true
+    share: false
 
   - name: GitHub
     icon: github
