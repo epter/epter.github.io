@@ -1,0 +1,43 @@
+---
+import { GITHUB_URL, SITE_AUTHOR } from '../consts';
+
+const today = new Date();
+---
+
+<footer>
+	<div>&copy; {today.getFullYear()} {SITE_AUTHOR}. All rights reserved.</div>
+	<div class="footer-links">
+		<a href="/about">소개</a>
+		<span>·</span>
+		<a href="/privacy">개인정보처리방침</a>
+		<span>·</span>
+		<a href="/rss.xml">RSS</a>
+		<span>·</span>
+		<a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
+	</div>
+</footer>
+<style>
+	footer {
+		padding: 2em 1em 4em 1em;
+		background: linear-gradient(var(--gray-gradient)) no-repeat;
+		color: rgb(var(--gray));
+		text-align: center;
+		font-size: 0.9rem;
+	}
+	.footer-links {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 0.6em;
+		margin-top: 0.75em;
+		flex-wrap: wrap;
+	}
+	.footer-links a {
+		text-decoration: none;
+		color: rgb(var(--gray));
+	}
+	.footer-links a:hover {
+		color: rgb(var(--gray-dark));
+		text-decoration: underline;
+	}
+</style>
