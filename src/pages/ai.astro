@@ -1,0 +1,189 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const aiPosts = (await getCollection('blog'))
+	.filter((post) => !post.data.draft && post.data.category?.toLowerCase() === 'ai')
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<!doctype html>
+<html lang="ko">
+	<head>
+		<BaseHead
+			title={`AI 트렌드 & 프롬프트 가이드 | ${SITE_TITLE}`}
+			description="2026년 최신 AI 트렌드(에이전트 AI, 바이브 코딩, MCP)와 실전 프롬프트 작성법·필수 옵션을 정리한 허브입니다."
+		/>
+		<style>
+			.hero {
+				padding: 1.5em 0 1.2em 0;
+				border-bottom: 1px solid rgb(var(--gray-light));
+				margin-bottom: 2em;
+			}
+			.hero h1 {
+				margin-bottom: 0.35em;
+			}
+			.hero p {
+				color: rgb(var(--gray));
+				margin: 0;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+				gap: 1rem;
+				margin-bottom: 2.5rem;
+			}
+			.card {
+				padding: 1.1rem 1.25rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 12px;
+				background: #fff;
+			}
+			.card h3 {
+				margin: 0 0 0.45rem 0;
+				font-size: 1.1rem;
+				color: var(--accent);
+			}
+			.card p {
+				margin: 0;
+				font-size: 0.92rem;
+				color: rgb(var(--gray-dark));
+				line-height: 1.55;
+			}
+			.cheat-box {
+				background: rgb(var(--gray-light), 0.35);
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 12px;
+				padding: 1.25rem;
+				margin-bottom: 2.5rem;
+			}
+			.cheat-box h2 {
+				margin-top: 0;
+				font-size: 1.35rem;
+			}
+			.cheat-box ul {
+				margin: 0.5rem 0 0 0;
+				padding-left: 1.2rem;
+			}
+			.cheat-box li {
+				margin-bottom: 0.45rem;
+				font-size: 0.95rem;
+			}
+			.post-list {
+				list-style: none;
+				padding: 0;
+				margin: 0;
+				display: flex;
+				flex-direction: column;
+				gap: 1rem;
+			}
+			.post-item {
+				padding: 1.1rem 1.25rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 12px;
+				transition: border-color 0.2s ease, box-shadow 0.2s ease;
+			}
+			.post-item:hover {
+				border-color: var(--accent);
+				box-shadow: var(--box-shadow);
+			}
+			.post-item a {
+				text-decoration: none;
+				color: inherit;
+				display: block;
+			}
+			.post-meta {
+				font-size: 0.85rem;
+				color: rgb(var(--gray));
+				margin-bottom: 0.3rem;
+			}
+			.post-title {
+				margin: 0 0 0.3rem 0;
+				font-size: 1.2rem;
+				color: rgb(var(--black));
+			}
+			.post-desc {
+				margin: 0;
+				font-size: 0.93rem;
+				color: rgb(var(--gray-dark));
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="hero">
+				<h1>AI 트렌드 &amp; 프롬프트 허브</h1>
+				<p>
+					단순 채팅을 넘어 에이전트·바이브 코딩·MCP 시대로 진입한 최신 AI 흐름과 실전 프롬프트 설계 노하우를 모았습니다.
+				</p>
+			</section>
+
+			<section>
+				<h2>2026년 핵심 AI 흐름 4가지</h2>
+				<div class="grid">
+					<div class="card">
+						<h3>1. 에이전트형 AI (Agentic AI)</h3>
+						<p>
+							질문 한 번에 답만 주던 챗봇을 넘어, <strong>Claude Code·Cursor</strong>처럼 여러 파일을 읽고 수정하며 테스트까지 스스로 반복 실행하는 자율 에이전트가 대세가 되었습니다.
+						</p>
+					</div>
+					<div class="card">
+						<h3>2. 바이브 코딩 (Vibe Coding)</h3>
+						<p>
+							자연어 지시만으로 앱을 구축하는 방식으로, <strong>Bolt.new·Lovable·v0</strong> 같은 즉시 배포 도구부터 전문 개발자용 AI IDE까지 폭넓게 확산되었습니다.
+						</p>
+					</div>
+					<div class="card">
+						<h3>3. MCP (Model Context Protocol)</h3>
+						<p>
+							Anthropic이 제안하고 Microsoft·Google·오픈소스 생태계가 채택한 표준 프로토콜로, AI가 로컬 파일·DB·API에 별도 커스텀 없이 연결됩니다.
+						</p>
+					</div>
+					<div class="card">
+						<h3>4. 실전 멀티모달 파이프라인</h3>
+						<p>
+							화면 스케치나 UI 녹화 영상을 바로 반응형 코드로 변환하고, 실시간 터미널 로그와 성능 지표를 함께 분석해 장애를 진단합니다.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="cheat-box">
+				<h2>프롬프트에 꼭 넣으면 좋은 실전 옵션 6가지</h2>
+				<ul>
+					<li><strong>구체적 역할(Scoped Role)</strong>: "도움이 되는 어시스턴트" 대신 "쿠버네티스 보안 전문 시니어 DevOps 엔지니어"처럼 범위와 톤을 좁혀 지정</li>
+					<li><strong>지시문과 데이터 격리(Delimiters)</strong>: <code>&lt;rules&gt;</code>, <code>&lt;context&gt;</code>, <code>&lt;input&gt;</code> 태그나 <code>```</code>로 명령과 사용자 입력을 분리해 프롬프트 인젝션 및 혼선 방지</li>
+					<li><strong>명확한 완료 기준(Acceptance Criteria)</strong>: "잘 써줘" 대신 "제공된 문서 사실만 사용, 150단어 이내, 전문 용어 배제" 등 검증 가능한 조건 명시</li>
+					<li><strong>자유도 제한(Constraints)</strong>: 허용 값을 <code>["positive", "neutral", "negative"]</code>처럼 제한하고, 인사말·군더더기 출력 금지 규칙 추가</li>
+					<li><strong>Few-shot 예시(Dynamic Few-shot)</strong>: 원하는 출력 형식에 정확히 맞는 입출력 예시 1~3개 제공</li>
+					<li><strong>사고 과정 분리(Controlled CoT)</strong>: 복잡한 추론이 필요할 때 <code>&lt;scratchpad&gt;</code> 블록 안에서 먼저 단계별 추론 후 최종 답만 출력</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>AI 관련 전체 글</h2>
+				<ul class="post-list">
+					{
+						aiPosts.map((post) => (
+							<li class="post-item">
+								<a href={`/blog/${post.id}/`}>
+									<div class="post-meta">
+										<FormattedDate date={post.data.pubDate} />
+									</div>
+									<h3 class="post-title">{post.data.title}</h3>
+									<p class="post-desc">{post.data.description}</p>
+								</a>
+							</li>
+						))
+					}
+				</ul>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
