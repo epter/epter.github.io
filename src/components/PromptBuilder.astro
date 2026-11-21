@@ -1,0 +1,286 @@
+---
+// 인터랙티브 프롬프트 생성기 컴포넌트 (클라이언트 측 순수 JS로 동작)
+---
+
+<section class="builder-wrap" aria-label="프롬프트 생성기">
+	<div class="builder-header">
+		<h2>실전 프롬프트 생성기</h2>
+		<p>옵션을 고르고 핵심 내용만 적으면 컨텍스트 엔지니어링이 적용된 프롬프트를 바로 조립해 줍니다.</p>
+	</div>
+
+	<div class="builder-grid">
+		<div class="field">
+			<label for="pb-role-preset">역할(Role) 프리셋</label>
+			<select id="pb-role-preset">
+				<option value="당신은 실무 중심의 시니어 소프트웨어 엔지니어입니다. 불필요한 서론 없이 바로 적용 가능한 코드와 근거를 제시합니다.">시니어 개발자</option>
+				<option value="당신은 리눅스·도커·네트워크 보안을 전문으로 하는 DevSecOps 엔지니어입니다. 보안 취약점과 실무 대응책을 우선 제시합니다.">보안 / DevSecOps 전문가</option>
+				<option value="당신은 복잡한 기술 주제를 읽기 쉽게 구조화하는 IT 테크 에디터입니다. 핵심 요약과 예시를 중심으로 작성합니다.">IT 블로그 / 테크 에디터</option>
+				<option value="당신은 데이터 추출 및 정제 자동화 전문가입니다. 지정된 스키마와 규칙을 엄격하게 준수해 응답합니다.">데이터 추출 / 자동화</option>
+				<option value="custom">직접 입력</option>
+			</select>
+		</div>
+
+		<div class="field">
+			<label for="pb-format">출력 형식(Output Format)</label>
+			<select id="pb-format">
+				<option value="markdown">구조화된 마크다운 (제목·불릿·코드블록)</option>
+				<option value="json">유효한 JSON 전용 (파싱용)</option>
+				<option value="table">비교 마크다운 표 + 핵심 요약</option>
+				<option value="checklist">실행 가능한 단계별 체크리스트</option>
+			</select>
+		</div>
+	</div>
+
+	<div class="field" id="pb-custom-role-wrap" style="display: none;">
+		<label for="pb-custom-role">직접 입력할 역할</label>
+		<input id="pb-custom-role" type="text" placeholder="예: 당신은 쿠버네티스 트러블슈팅 전문가입니다." />
+	</div>
+
+	<div class="field">
+		<label for="pb-task">작업 목표 (Task)</label>
+		<textarea id="pb-task" rows="2" placeholder="예: 아래 서버 로그를 분석해서 장애 원인과 즉시 실행할 복구 명령어를 알려주세요."></textarea>
+	</div>
+
+	<div class="field">
+		<label for="pb-context">참고 데이터 / 맥락 (Context, 선택)</label>
+		<textarea id="pb-context" rows="3" placeholder="분석할 텍스트, 코드, 조건 등을 붙여넣으세요. 비워두면 입력 자리표시자({{INPUT}})가 들어갑니다."></textarea>
+	</div>
+
+	<div class="options-box">
+		<span class="options-title">포함할 프롬프트 옵션</span>
+		<div class="checkbox-grid">
+			<label><input type="checkbox" id="opt-delimiters" checked /> XML 구분자 격리 (<code>&lt;rules&gt;</code>, <code>&lt;input&gt;</code>)</label>
+			<label><input type="checkbox" id="opt-concise" checked /> 인사말·군더더기 출력 금지</label>
+			<label><input type="checkbox" id="opt-fallback" checked /> 근거 부족 시 추측 금지 (Fallback)</label>
+			<label><input type="checkbox" id="opt-cot" /> 단계별 추론 (<code>&lt;scratchpad&gt;</code>)</label>
+			<label><input type="checkbox" id="opt-fewshot" /> Few-shot 예시 템플릿 포함</label>
+		</div>
+	</div>
+
+	<div class="output-wrap">
+		<div class="output-bar">
+			<span>생성된 프롬프트</span>
+			<button type="button" id="pb-copy-btn">프롬프트 복사</button>
+		</div>
+		<pre id="pb-output"></pre>
+	</div>
+</section>
+
+<script>
+	const rolePreset = document.getElementById('pb-role-preset') as HTMLSelectElement;
+	const customRoleWrap = document.getElementById('pb-custom-role-wrap') as HTMLDivElement;
+	const customRoleInput = document.getElementById('pb-custom-role') as HTMLInputElement;
+	const formatSelect = document.getElementById('pb-format') as HTMLSelectElement;
+	const taskInput = document.getElementById('pb-task') as HTMLTextAreaElement;
+	const contextInput = document.getElementById('pb-context') as HTMLTextAreaElement;
+	const optDelimiters = document.getElementById('opt-delimiters') as HTMLInputElement;
+	const optConcise = document.getElementById('opt-concise') as HTMLInputElement;
+	const optFallback = document.getElementById('opt-fallback') as HTMLInputElement;
+	const optCot = document.getElementById('opt-cot') as HTMLInputElement;
+	const optFewshot = document.getElementById('opt-fewshot') as HTMLInputElement;
+	const outputEl = document.getElementById('pb-output') as HTMLPreElement;
+	const copyBtn = document.getElementById('pb-copy-btn') as HTMLButtonElement;
+
+	const FORMAT_RULES: Record<string, string> = {
+		markdown: '출력은 제목, 불릿 포인트, 코드 블록을 활용한 깔끔한 마크다운 형식으로 작성하세요.',
+		json: 'Return ONLY valid JSON without markdown code fences or extra text. Ensure brackets, quotes, and commas are syntactically valid.',
+		table: '핵심 비교 항목을 마크다운 표(Table)로 먼저 정리한 뒤, 3줄 이내의 결론을 덧붙이세요.',
+		checklist: '바로 실행할 수 있는 순서대로 번호가 매겨진 체크리스트(- [ ]) 형식으로 작성하세요.',
+	};
+
+	function buildPrompt() {
+		const isCustomRole = rolePreset.value === 'custom';
+		customRoleWrap.style.display = isCustomRole ? 'block' : 'none';
+		const roleText = isCustomRole
+			? customRoleInput.value.trim() || '당신은 해당 분야의 시니어 전문가입니다.'
+			: rolePreset.value;
+
+		const taskText =
+			taskInput.value.trim() || '제공된 입력을 분석하여 핵심 요약과 실행 방안을 도출하세요.';
+		const contextText = contextInput.value.trim() || '{{여기에_분석할_내용_입력}}';
+
+		const rules: string[] = [FORMAT_RULES[formatSelect.value]];
+		if (optConcise.checked) {
+			rules.push('인사말, 서론, 맺음말 등 불필요한 미사여구를 출력하지 마세요.');
+		}
+		if (optFallback.checked) {
+			rules.push(
+				'제공된 정보나 확실한 근거에서 확인할 수 없는 내용은 추측하지 말고 "정보 없음" 또는 null로 명시하세요.',
+			);
+		}
+		if (optCot.checked) {
+			rules.push(
+				'최종 답변을 출력하기 전에 <scratchpad> 태그 안에서 단계별로 논리를 먼저 검증한 뒤 최종 결과만 제시하세요.',
+			);
+		}
+
+		const parts: string[] = [`${roleText}\n\n[작업 목표]\n${taskText}`];
+
+		if (optDelimiters.checked) {
+			parts.push(`<rules>\n${rules.map((r) => `- ${r}`).join('\n')}\n</rules>`);
+			if (optFewshot.checked) {
+				parts.push(
+					`<example>\nINPUT: {{예시_입력}}\nOUTPUT: {{원하는_출력_예시}}\n</example>`,
+				);
+			}
+			parts.push(`<input>\n${contextText}\n</input>`);
+		} else {
+			parts.push(`[규칙]\n${rules.map((r) => `- ${r}`).join('\n')}`);
+			if (optFewshot.checked) {
+				parts.push(`[예시]\nINPUT: {{예시_입력}}\nOUTPUT: {{원하는_출력_예시}}`);
+			}
+			parts.push(`[입력 데이터]\n${contextText}`);
+		}
+
+		outputEl.textContent = parts.join('\n\n');
+	}
+
+	[
+		rolePreset,
+		customRoleInput,
+		formatSelect,
+		taskInput,
+		contextInput,
+		optDelimiters,
+		optConcise,
+		optFallback,
+		optCot,
+		optFewshot,
+	].forEach((el) => {
+		el?.addEventListener('input', buildPrompt);
+		el?.addEventListener('change', buildPrompt);
+	});
+
+	copyBtn?.addEventListener('click', async () => {
+		if (!outputEl.textContent) return;
+		try {
+			await navigator.clipboard.writeText(outputEl.textContent);
+			copyBtn.textContent = '복사 완료!';
+			setTimeout(() => {
+				copyBtn.textContent = '프롬프트 복사';
+			}, 1800);
+		} catch {
+			copyBtn.textContent = '복사 실패 (직접 선택)';
+		}
+	});
+
+	buildPrompt();
+</script>
+
+<style>
+	.builder-wrap {
+		background: #fff;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 14px;
+		padding: 1.5rem;
+		margin-bottom: 2.5rem;
+		box-shadow: 0 2px 10px rgba(var(--black), 4%);
+	}
+	.builder-header h2 {
+		margin: 0 0 0.3rem 0;
+		font-size: 1.4rem;
+	}
+	.builder-header p {
+		margin: 0 0 1.25rem 0;
+		font-size: 0.92rem;
+		color: rgb(var(--gray));
+	}
+	.builder-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 1rem;
+	}
+	.field {
+		margin-bottom: 1rem;
+	}
+	.field label {
+		display: block;
+		font-size: 0.88rem;
+		font-weight: 700;
+		margin-bottom: 0.35rem;
+		color: rgb(var(--gray-dark));
+	}
+	.field select,
+	.field input,
+	.field textarea {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 8px;
+		font-family: inherit;
+		font-size: 0.92rem;
+		background: #fafafa;
+	}
+	.field select:focus,
+	.field input:focus,
+	.field textarea:focus {
+		outline: none;
+		border-color: var(--accent);
+		background: #fff;
+	}
+	.options-box {
+		padding: 0.9rem 1rem;
+		background: rgba(var(--gray-light), 0.3);
+		border-radius: 10px;
+		margin-bottom: 1.1rem;
+	}
+	.options-title {
+		display: block;
+		font-size: 0.88rem;
+		font-weight: 700;
+		margin-bottom: 0.5rem;
+	}
+	.checkbox-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 0.45rem 1rem;
+		font-size: 0.88rem;
+	}
+	.checkbox-grid label {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		cursor: pointer;
+	}
+	.output-wrap {
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 10px;
+		overflow: hidden;
+	}
+	.output-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.55rem 0.9rem;
+		background: rgb(var(--gray-dark));
+		color: #fff;
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+	.output-bar button {
+		padding: 0.35rem 0.8rem;
+		border: none;
+		border-radius: 6px;
+		background: var(--accent);
+		color: #fff;
+		font-size: 0.82rem;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.output-bar button:hover {
+		opacity: 0.9;
+	}
+	#pb-output {
+		margin: 0;
+		padding: 1rem;
+		background: #1e1e24;
+		color: #f4f4f6;
+		font-size: 0.86rem;
+		line-height: 1.55;
+		white-space: pre-wrap;
+		word-break: break-word;
+		max-height: 380px;
+		overflow-y: auto;
+	}
+</style>
